@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Smart Locker</title>
+    <style>
+        /* CSS cho giao diện chính */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .menu {
+            background-color: #555;
+            color: #fff;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .menu a {
+            color: #fff;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+
+        .menu a:hover {
+            text-decoration: underline;
+        }
+
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* CSS cho menu người dùng */
+        .user-menu {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .user-menu li {
+            margin-right: 30px;
+        }
+
+        .user-menu li:last-child {
+            margin-right: 0;
+        }
+
+        /* CSS cho menu tài khoản con */
+        .user-submenu {
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .user-menu:hover .user-submenu {
+            display: block;
+        }
+
+        .user-submenu a {
+            display: block;
+            padding: 10px;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .user-submenu a:hover {
+            background-color: #ddd;
+        }
+
+        /* CSS cho cách lề của Thông báo và Tên người dùng */
+        .menu span {
+            margin-right: 30px;
+        }
+
+        /* CSS cho Đặt Tủ và Lịch Sử Đặt Tủ */
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .action-button {
+            flex: 1;
+            background-color: #f2f2f2;
+            padding: 20px;
+            text-align: center;
+            margin-right: 20px;
+            cursor: pointer;
+        }
+
+        .action-button:last-child {
+            margin-right: 0;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Hệ thống Smart Locker</h1>
+    </header>
+    <nav class="menu">
+        <div style="margin-left: auto;">
+            <span><a>Thông báo</a> </span>
+        </div>
+        <div class="user-menu">
+            <span id="user-name"></span>
+            <ul class="user-submenu">
+                <li><a href="#">Thông tin cá nhân</a></li>
+                <li><a href="#">Lịch Sử Đặt Tủ</a></li>
+                <li><a href="{{ url_for('logout') }}">Đăng xuất</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="content">
+        <div class="action-buttons">
+            <div class="action-button">
+                <a href="#">Bấm để đặt tủ</a>
+            </div>
+            <div class="action-button">
+                <a href="#">Xem lịch sử</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Lấy tên người dùng từ Flask và đặt nội dung thẻ HTML
+        var user_name = "{{ user_name }}";  // Lấy từ biến user_name được truyền từ Python
+        var userElement = document.getElementById("user-name");
+        userElement.textContent = user_name;
+    </script>
+</body>
+</html>
