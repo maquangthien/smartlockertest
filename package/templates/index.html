@@ -1,14 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Trang chủ</title>
+    <title>Hệ thống Smart Locker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            text-align: center;
+            font-size: 24px;
+            margin-top: 20px;
+        }
+
+        .navigation {
+            text-align: right;
+            margin-right: 20px;
+        }
+
+        .navigation a {
+            text-decoration: none;
+            margin: 0 20px;
+        }
+
+        .main-content {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px;
+        }
+
+        .feature-box {
+            width: 48%;
+            border: 1px solid #ccc;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .feature-box:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
 </head>
 <body>
-    <h1>Trang chủ</h1>
-    <ul>
-        <li><a href="{{ url_for('home') }}">Trang chủ</a></li>
-        <li><a href="{{ url_for('register') }}">Đăng ký</a></li>
-        <li><a href="{{ url_for('login') }}">Đăng nhập</a></li>
-    </ul>
+    <div class="header">
+        Hệ thống Smart Locker
+    </div>
+
+    <div class="navigation">
+        <a href="/notifications">Thông báo</a>
+        <a href="/register">Đăng ký</a>
+        <a href="/login">Đăng nhập</a>
+    </div>
+
+    <div class="main-content">
+        <a href="/login" class="feature-box">
+            <h2>Đặt Tủ</h2>
+        </a>
+        <a href="/login" class="feature-box">
+            <h2>Lịch Sử Đặt Tủ</h2>
+        </a>
+    </div>
 </body>
 </html>
