@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+    <head>
+          <title>lịch sử dùng tủ</title>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+          <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+          <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                }
+                header {
+                    text-align: center;
+                    padding: 10px;
+                }
+                container {
+                    max-width: 1200px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }
+                footer {
+                   text-align: center;
+                    clear: both;
+                    padding: 10px;
+                    position: fixed;
+                    bottom: 0;
+                    width: 100%;
+                }
+            </style>
+    </head>
+    <body>
+        <header>
+            <div>
+               <nav class="navbar navbar-inverse">
+                  <div class="container-fluid">
+                    <div class="navbar-header">
+                      <a class="navbar-brand" href="#">SMART-LOCKER</a>
+                    </div>
+                    <ul class="nav navbar-nav">
+
+                        <li><a href="{{ url_for('home') }}">Trang chủ</a></li>
+                        <li><a href="{{ url_for('register') }}">Đăng ký</a></li>
+                        <li><a href="{{ url_for('login') }}">Đăng nhập</a></li>
+                        <li><a href="{{ url_for('process_locker') }}">Đặt tủ</a></li>
+                        <li><a href="{{ url_for('history') }}">Lịch sử dùng tủ</a></li>
+
+                    </ul>
+                  </div>
+               </nav>
+            </div>
+        </header>
+        <container>
+
+        </container>
+         <footer>
+               <div class="container-fluid bg-success text-white">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h3>Giới Thiệu</h3>
+                            <p>Smart Locker là một dịch vụ chuyên cung cấp hệ thống khoá thông minh cho việc lưu trữ tài sản cá nhân của bạn một cách an toàn và tiện lợi.</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h3>Thông Tin Liên Hệ</h3>
+
+                                <p>Địa chỉ: 123 Đường ABC, Thành phố XYZ</p>
+                                <p>Email: contact@example.com</p>
+                                <p>Điện thoại: (123) 456-7890</p>
+
+                        </div>
+                        <div class="col-md-4">
+                            <h3>Thông Tin Công Ty</h3>
+                            <p>Tên Công Ty: Công Ty ABC</p>
+                            <p>Mã số thuế: 123456789</p>
+                            <p>Đăng ký: Thành phố XYZ</p>
+                        </div>
+                    </div>
+                    <div class="copyright">
+                        &copy; 2023 Công Ty ABC. Tất cả quyền được bảo lưu.
+                    </div>
+
+               </div>
+         </footer>
+    </body>
+</html>
