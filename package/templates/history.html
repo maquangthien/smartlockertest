@@ -18,9 +18,7 @@
                     padding: 10px;
                 }
                 container {
-                    max-width: 1200px;
-                    margin: 0 auto;
-                    padding: 20px;
+                    width: 1200px
                 }
                 footer {
                    text-align: center;
@@ -29,6 +27,13 @@
                     position: fixed;
                     bottom: 0;
                     width: 100%;
+                }
+                .scrollable-container {
+                    max-height: 400px;
+                    overflow: auto;
+                }
+                h1{
+                text-align: center;
                 }
             </style>
     </head>
@@ -54,7 +59,31 @@
             </div>
         </header>
         <container>
-
+            <h1 class="center">Lịch sử dùng tủ</h1>
+            <div class="scrollable-container ">
+                <table class="table table-bordered large-table" border="1">
+                    <thead>
+                        <tr>
+                            <th>History ID</th>
+                            <th>User ID</th>
+                            <th>Locker ID</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in history_data %}
+                        <tr>
+                            <td>{{ row[0] }}</td>
+                            <td>{{ row[1] }}</td>
+                            <td>{{ row[2] }}</td>
+                            <td>{{ row[3] }}</td>
+                            <td>{{ row[4] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </container>
          <footer>
                <div class="container-fluid bg-success text-white">
