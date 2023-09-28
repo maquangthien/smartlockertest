@@ -87,21 +87,29 @@ def login():
         password = request.form['password']
 
         cursor = db.cursor()
-        cursor.execute("SELECT user_id, name FROM users WHERE phone = %s AND password = %s", (phone, password))
+        cursor.execute("SELECT user_id, name, role_id FROM users WHERE phone = %s AND password = %s", (phone, password))
         user = cursor.fetchone()
 
         if user:
             session['user_id'] = user[0]
             user_name = user[1]
+            role_id = user[2]
+
             cursor.close()
 
-            return render_template('user.html', user_name=user_name)  # Truyền tên người dùng vào template
+
+            if role_id == '3':
+                return render_template('admin.html', user_name=user_name)
+            elif role_id == '2':
+                return render_template('delivery.html', user_name=user_name)
+            elif role_id == '1':
+                return render_template('user.html', user_name=user_name)
+            else:
+                error_message = "Vai trò không hợp lệ."
+                return render_template('login.html', error_message=error_message)
 
         else:
             error_message = "Sai số điện thoại hoặc mật khẩu. Vui lòng thử lại."
-
-            cursor.close()
-
             return render_template('login.html', error_message=error_message)
 
     return render_template('login.html')
