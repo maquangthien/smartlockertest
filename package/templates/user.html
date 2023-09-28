@@ -84,12 +84,11 @@
             background-color: #ddd;
         }
 
-        /* CSS cho cách lề của Thông báo và Tên người dùng */
+
         .menu span {
             margin-right: 30px;
         }
 
-        /* CSS cho Đặt Tủ và Lịch Sử Đặt Tủ */
         .action-buttons {
             display: flex;
             justify-content: space-between;
@@ -108,6 +107,9 @@
         .action-button:last-child {
             margin-right: 0;
         }
+        #booking-form {
+    display: none;
+        }
     </style>
 </head>
 <body>
@@ -116,7 +118,7 @@
     </header>
     <nav class="menu">
         <div style="margin-left: auto;">
-            <span><a>Thông báo</a> </span>
+            <span><a href=""> Thông báo </a> </span>
         </div>
         <div class="user-menu">
             <span id="user-name"></span>
@@ -130,18 +132,62 @@
     <div class="content">
         <div class="action-buttons">
             <div class="action-button">
-                <a href="#">Bấm để đặt tủ</a>
+                <a href="#" id="booking-button">Bấm để đặt tủ</a>
             </div>
             <div class="action-button">
                 <a href="#">Xem lịch sử</a>
             </div>
         </div>
+
+        <!-- Giao diện hiện ra khi ta bấm đặt tủ-->
+       <div id="booking-form">
+        <container>
+            <h1>Đặt lịch sử dụng Smart Locker</h1>
+               <form action="/process_locker" method="post">
+                   <h1>Người gửi</h1>
+                  <div class="form-floating mb-3 mt-3">
+                     <label for="name">Họ và tên :</label>
+                     <input type="name" class="form-control" id="name" placeholder="Enter name" name="name" required>
+                </div>
+                <div class="form-floating mb-3 mt-3">
+                      <label for="phone">Số điện thoại:</label>
+                      <input type="tel" class="form-control" id="phone" placeholder="Enter phone" name="phone" required>
+
+                    </select><br><br>
+                    <h1>Người nhận</h1>
+                  <div class="form-floating mb-3 mt-3">
+                     <label for="name">Họ và tên:</label>
+                     <input type="name" class="form-control" id="name" placeholder="Enter name" name="name" required>
+                </div>
+                <div class="form-floating mb-3 mt-3">
+                     <label for="mail">Email:</label>
+                     <input type="mail" class="form-control" id="mail" placeholder="Enter email" name="mail" required>
+                </div>
+                <div class="form-floating mb-3 mt-3">
+                      <label for="phone">Số điện thoại:</label>
+                      <input type="tel" class="form-control" id="phone" placeholder="Enter phone" name="phone" required>
+                </div>
+                      <label for="start_time">Thời gian đặt:</label>
+                      <input type="datetime-local" id="start_time" name="start_time" required><br><br>
+                  <input type="submit" value="Đặt tủ ">
+              </form>
+        </container>
     </div>
+
     <script>
-        // Lấy tên người dùng từ Flask và đặt nội dung thẻ HTML
-        var user_name = "{{ user_name }}";  // Lấy từ biến user_name được truyền từ Python
+
+        var user_name = "{{ user_name }}";
         var userElement = document.getElementById("user-name");
         userElement.textContent = user_name;
+
+        const bookingButton = document.getElementById("booking-button");
+        const bookingForm = document.getElementById("booking-form");
+
+        bookingButton.addEventListener("click", function(event) {
+            event.preventDefault();
+
+            bookingForm.style.display = "block";
+        });
     </script>
 </body>
 </html>
