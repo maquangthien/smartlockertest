@@ -189,7 +189,7 @@ def logout():
     session.clear()
     session.pop('user_id', None)
     return redirect(url_for('login'))
-    @app.route('/process_locker', methods=['GET','POST'])
+@app.route('/process_locker', methods=['GET','POST'])
 def process_locker():
     try:
      if request.method == 'POST':
