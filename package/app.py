@@ -87,7 +87,12 @@ def send_email(mail, locker_id, otp_code):
 def reset_status():
     try:
         # Lấy danh sách các tủ có trạng thái "on" và end_time đã qua
-        select_query = "SELECT locker_id, end_time FROM histories"
+        select_query = """
+                SELECT l.locker_id, h.end_time
+                FROM lockers l
+                INNER JOIN histories h ON l.locker_id = h.locker_id
+                WHERE l.status = 'on' AND h.end_time < NOW()
+            """
         cursor.execute(select_query)
         lockers_to_update = cursor.fetchall()
 
@@ -176,21 +181,13 @@ def login():
     return render_template('login.html')
 
 
-@app.route('/user')
+@app.route('/user', methods=['GET', 'POST'])
 def user():
 
     if 'user_id' in session:
         return render_template('user.html')
     else:
         return redirect(url_for('login'))
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    session.pop('user_id', None)
-    return redirect(url_for('login'))
-    @app.route('/process_locker', methods=['GET','POST'])
-def process_locker():
     try:
      if request.method == 'POST':
         name = request.form['name']
@@ -245,7 +242,13 @@ def process_locker():
 
     except Exception as e:
         return f"Lỗi: {e}"
-    return render_template('process_locker.html')
+    return render_template('user.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    session.pop('user_id', None)
+    return redirect(url_for('login'))
 
 @app.route('/history')
 def history():
