@@ -9,7 +9,7 @@ import smtplib
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
-# Thiết lập thông tin kết nối đến cơ sở dữ liệu MySQL
+
 db = mysql.connector.connect(
     host="localhost",
     user="root",
@@ -32,76 +32,7 @@ def generate_user_id():
         user_id = "U001"
 
     return user_id
-def generate_history_id():
-    cursor = db.cursor()
-    cursor.execute("SELECT MAX(history_id) FROM histories")
-    result = cursor.fetchone()
-    cursor.close()
 
-    if result[0] is not None:
-        current_id = int(result[0][1:])
-        next_id = current_id + 1
-        history_id = f"H{next_id:03d}"
-    else:
-        history = "H001"
-
-    return history_id
-
-def generate_otp_id():
-    cursor = db.cursor()
-    cursor.execute("SELECT MAX(otp_id) FROM otps")
-    result = cursor.fetchone()
-    cursor.close()
-
-    if result[0] is not None:
-        current_id = int(result[0][1:])
-        next_id = current_id + 1
-        otp_id = f"{next_id:03d}"
-    else:
-        otp_id = "001"
-
-    return otp_id
-def send_email(mail, locker_id, otp_code):
-    # Thiết lập thông tin SMTP
-    smtp_server = "smtp.gmail.com"
-    smtp_port = 587
-    smtp_username = "2051010118huyen@ou.edu.vn"
-    smtp_password = "nguyenthithuhuyen"
-
-    # Tạo email
-    msg = MIMEMultipart()
-    msg['From'] = "2051010118huyen@ou.edu.vn"
-    msg['To'] = mail
-    msg['Subject'] = "Thông tin đặt tủ"
-
-    body = f"Tủ đã được cấp. Mã tủ: {locker_id},với mã OTP là: {otp_code} Vui lòng không cung cấp mã này cho bất kì ai.Mã OTP có thời gian sử dụng là 3 tiếng."
-    msg.attach(MIMEText(body, 'plain'))
-
-    # Gửi email
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
-        server.starttls()
-        server.login(smtp_username, smtp_password)
-        server.sendmail(msg['From'], msg['To'], msg.as_string())
-
-# Set lại status của locker_id
-def reset_status():
-    try:
-        # Lấy danh sách các tủ có trạng thái "on" và end_time đã qua
-        select_query = "SELECT locker_id, end_time FROM histories"
-        cursor.execute(select_query)
-        lockers_to_update = cursor.fetchall()
-
-        current_time = datetime.now()
-
-        # Kiểm tra và cập nhật trạng thái của các tủ
-        for locker_id, end_time in lockers_to_update:
-            if current_time > end_time:
-                # Cập nhật trạng thái của tủ sang "off"
-                update_locker_query = "UPDATE lockers SET status = 'off' WHERE locker_id = %s"
-                cursor.execute(update_locker_query, (locker_id,))
-                db.commit()
-    except Exception as e:
-        print(f"Lỗi: {e}")
 
 @app.route('/')
 def home():
@@ -189,6 +120,78 @@ def logout():
     session.clear()
     session.pop('user_id', None)
     return redirect(url_for('login'))
+
+
+def generate_history_id():
+    cursor = db.cursor()
+    cursor.execute("SELECT MAX(history_id) FROM histories")
+    result = cursor.fetchone()
+    cursor.close()
+
+    if result[0] is not None:
+        current_id = int(result[0][1:])
+        next_id = current_id + 1
+        history_id = f"H{next_id:03d}"
+    else:
+        history = "H001"
+
+    return history_id
+
+def generate_otp_id():
+    cursor = db.cursor()
+    cursor.execute("SELECT MAX(otp_id) FROM otps")
+    result = cursor.fetchone()
+    cursor.close()
+
+    if result[0] is not None:
+        current_id = int(result[0][1:])
+        next_id = current_id + 1
+        otp_id = f"{next_id:03d}"
+    else:
+        otp_id = "001"
+
+    return otp_id
+def send_email(mail, locker_id, otp_code):
+    # Thiết lập thông tin SMTP
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+    smtp_username = "2051010118huyen@ou.edu.vn"
+    smtp_password = "nguyenthithuhuyen"
+
+    # Tạo email
+    msg = MIMEMultipart()
+    msg['From'] = "2051010118huyen@ou.edu.vn"
+    msg['To'] = mail
+    msg['Subject'] = "Thông tin đặt tủ"
+
+    body = f"Tủ đã được cấp. Mã tủ: {locker_id},với mã OTP là: {otp_code} Vui lòng không cung cấp mã này cho bất kì ai.Mã OTP có thời gian sử dụng là 3 tiếng."
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Gửi email
+    with smtplib.SMTP(smtp_server, smtp_port) as server:
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+        server.sendmail(msg['From'], msg['To'], msg.as_string())
+
+# Set lại status của locker_id
+def reset_status():
+    try:
+        # Lấy danh sách các tủ có trạng thái "on" và end_time đã qua
+        select_query = "SELECT locker_id, end_time FROM histories"
+        cursor.execute(select_query)
+        lockers_to_update = cursor.fetchall()
+
+        current_time = datetime.now()
+
+        # Kiểm tra và cập nhật trạng thái của các tủ
+        for locker_id, end_time in lockers_to_update:
+            if current_time > end_time:
+                # Cập nhật trạng thái của tủ sang "off"
+                update_locker_query = "UPDATE lockers SET status = 'off' WHERE locker_id = %s"
+                cursor.execute(update_locker_query, (locker_id,))
+                db.commit()
+    except Exception as e:
+        print(f"Lỗi: {e}")
 @app.route('/process_locker', methods=['GET','POST'])
 def process_locker():
     try:
