@@ -82,31 +82,26 @@ def send_email(mail, locker_id, otp_code):
         server.starttls()
         server.login(smtp_username, smtp_password)
         server.sendmail(msg['From'], msg['To'], msg.as_string())
-
-# Set lại status của locker_id
-def reset_status():
+# Hàm xóa otps sau khi qua ngày mới
+def delete_otps():
     try:
-        # Lấy danh sách các tủ có trạng thái "on" và end_time đã qua
-        select_query = """
-                SELECT l.locker_id, h.end_time
-                FROM lockers l
-                INNER JOIN histories h ON l.locker_id = h.locker_id
-                WHERE l.status = 'on' AND h.end_time < NOW()
-            """
-        cursor.execute(select_query)
-        lockers_to_update = cursor.fetchall()
-
         current_time = datetime.now()
+        expiration_time = current_time.replace(hour=0, minute=0, second=0) + timedelta(days=1)
+        delete_query = "DELETE FROM otps WHERE expiration_time < %s"
+        cursor.execute(delete_query, (expiration_time,))
 
-        # Kiểm tra và cập nhật trạng thái của các tủ
-        for locker_id, end_time in lockers_to_update:
-            if current_time > end_time:
-                # Cập nhật trạng thái của tủ sang "off"
-                update_locker_query = "UPDATE lockers SET status = 'off' WHERE locker_id = %s"
-                cursor.execute(update_locker_query, (locker_id,))
-                db.commit()
+        # Lưu thay đổi và đóng kết nối đến cơ sở dữ liệu
+        db.commit()
+        cursor.close()
+        db.close()
+
+        print("Xóa các OTP hết hạn thành công.")
+
     except Exception as e:
         print(f"Lỗi: {e}")
+
+    # Gọi hàm để xóa các OTP hết hạn
+    delete_otps()
 
 @app.route('/')
 def home():
@@ -199,6 +194,26 @@ def user():
         # Kiểm tra xem số điện thoại có tồn tại trong bảng "users" hay không
         cursor.execute("SELECT user_id FROM users WHERE phone = %s", (phone,))
         user = cursor.fetchone()
+
+         # Lấy danh sách các tủ có trạng thái "on" và end_time đã qua
+        select_query = """
+                SELECT l.locker_id, h.end_time
+                FROM lockers l
+                INNER JOIN histories h ON l.locker_id = h.locker_id
+                WHERE l.status = 'on' AND h.end_time < NOW()
+            """
+        cursor.execute(select_query)
+        lockers_to_update = cursor.fetchall()
+
+        current_time = datetime.now()
+
+        # Kiểm tra và cập nhật trạng thái của các tủ
+        for locker_id, end_time in lockers_to_update:
+            if current_time > end_time:
+                # Cập nhật trạng thái của tủ sang "off"
+                update_locker_query = "UPDATE lockers SET status = 'off' WHERE locker_id = %s"
+                cursor.execute(update_locker_query, (locker_id,))
+                db.commit()
 
         if user:
             # Kiểm tra xem có tủ nào có status "off" không
