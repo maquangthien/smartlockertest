@@ -33,7 +33,79 @@ def generate_user_id():
 
     return user_id
 
+def generate_history_id():
+    cursor = db.cursor()
+    cursor.execute("SELECT MAX(history_id) FROM histories")
+    result = cursor.fetchone()
+    cursor.close()
 
+    if result[0] is not None:
+        current_id = int(result[0][1:])
+        next_id = current_id + 1
+        history_id = f"H{next_id:03d}"
+    else:
+        history = "H001"
+
+    return history_id
+
+def generate_otp_id():
+    cursor = db.cursor()
+    cursor.execute("SELECT MAX(otp_id) FROM otps")
+    result = cursor.fetchone()
+    cursor.close()
+
+    if result[0] is not None:
+        current_id = int(result[0][1:])
+        next_id = current_id + 1
+        otp_id = f"{next_id:03d}"
+    else:
+        otp_id = "001"
+
+    return otp_id
+
+def send_email(mail, locker_id, otp_code):
+    # Thiết lập thông tin SMTP
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+    smtp_username = "2051010118huyen@ou.edu.vn"
+    smtp_password = "nguyenthithuhuyen"
+
+    # Tạo email
+    msg = MIMEMultipart()
+    msg['From'] = "2051010118huyen@ou.edu.vn"
+    msg['To'] = mail
+    msg['Subject'] = "Thông tin đặt tủ"
+
+    body = f"Tủ đã được cấp. Mã OTP là: {otp_code} Vui lòng không cung cấp mã này cho bất kì ai.Mã OTP có thời gian sử dụng là 3 tiếng."
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Gửi email
+    with smtplib.SMTP(smtp_server, smtp_port) as server:
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+        server.sendmail(msg['From'], msg['To'], msg.as_string())
+
+# Hàm xóa otps sau khi qua ngày mới
+def delete_otps():
+    try:
+        current_time = datetime.now()
+        expiration_time = current_time.replace(hour=0, minute=0, second=0) + timedelta(days=1)
+        delete_query = "DELETE FROM otps WHERE expiration_time < %s"
+        cursor.execute(delete_query, (expiration_time,))
+
+        # Lưu thay đổi và đóng kết nối đến cơ sở dữ liệu
+        db.commit()
+        cursor.close()
+        db.close()
+
+        print("Xóa các OTP hết hạn thành công.")
+
+    except Exception as e:
+        print(f"Lỗi: {e}")
+
+    # Gọi hàm để xóa các OTP hết hạn
+    delete_otps()
+    
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -115,94 +187,11 @@ def login():
     return render_template('login.html')
 
 
-@app.route('/user')
+@app.route('/user', methods=['GET','POST'])
 def user():
 
     if 'user_id' in session:
-        return render_template('user.html')
-    else:
-        return redirect(url_for('login'))
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    session.pop('user_id', None)
-    return redirect(url_for('login'))
-
-
-def generate_history_id():
-    cursor = db.cursor()
-    cursor.execute("SELECT MAX(history_id) FROM histories")
-    result = cursor.fetchone()
-    cursor.close()
-
-    if result[0] is not None:
-        current_id = int(result[0][1:])
-        next_id = current_id + 1
-        history_id = f"H{next_id:03d}"
-    else:
-        history = "H001"
-
-    return history_id
-
-def generate_otp_id():
-    cursor = db.cursor()
-    cursor.execute("SELECT MAX(otp_id) FROM otps")
-    result = cursor.fetchone()
-    cursor.close()
-
-    if result[0] is not None:
-        current_id = int(result[0][1:])
-        next_id = current_id + 1
-        otp_id = f"{next_id:03d}"
-    else:
-        otp_id = "001"
-
-    return otp_id
-def send_email(mail, locker_id, otp_code):
-    # Thiết lập thông tin SMTP
-    smtp_server = "smtp.gmail.com"
-    smtp_port = 587
-    smtp_username = "2051010118huyen@ou.edu.vn"
-    smtp_password = "nguyenthithuhuyen"
-
-    # Tạo email
-    msg = MIMEMultipart()
-    msg['From'] = "2051010118huyen@ou.edu.vn"
-    msg['To'] = mail
-    msg['Subject'] = "Thông tin đặt tủ"
-
-    body = f"Tủ đã được cấp. Mã tủ: {locker_id},với mã OTP là: {otp_code} Vui lòng không cung cấp mã này cho bất kì ai.Mã OTP có thời gian sử dụng là 3 tiếng."
-    msg.attach(MIMEText(body, 'plain'))
-
-    # Gửi email
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
-        server.starttls()
-        server.login(smtp_username, smtp_password)
-        server.sendmail(msg['From'], msg['To'], msg.as_string())
-
-# Set lại status của locker_id
-def reset_status():
-    try:
-        # Lấy danh sách các tủ có trạng thái "on" và end_time đã qua
-        select_query = "SELECT locker_id, end_time FROM histories"
-        cursor.execute(select_query)
-        lockers_to_update = cursor.fetchall()
-
-        current_time = datetime.now()
-
-        # Kiểm tra và cập nhật trạng thái của các tủ
-        for locker_id, end_time in lockers_to_update:
-            if current_time > end_time:
-                # Cập nhật trạng thái của tủ sang "off"
-                update_locker_query = "UPDATE lockers SET status = 'off' WHERE locker_id = %s"
-                cursor.execute(update_locker_query, (locker_id,))
-                db.commit()
-    except Exception as e:
-        print(f"Lỗi: {e}")
-@app.route('/process_locker', methods=['GET','POST'])
-def process_locker():
-    try:
+            try:
      if request.method == 'POST':
         name = request.form['name']
         mail = request.form['mail']
@@ -213,7 +202,25 @@ def process_locker():
         # Kiểm tra xem số điện thoại có tồn tại trong bảng "users" hay không
         cursor.execute("SELECT user_id FROM users WHERE phone = %s", (phone,))
         user = cursor.fetchone()
+        # Lấy danh sách các tủ có trạng thái "on" và end_time đã qua
+        select_query = """
+                SELECT l.locker_id, h.end_time
+                FROM lockers l
+                INNER JOIN histories h ON l.locker_id = h.locker_id
+                WHERE l.status = 'on' AND h.end_time < NOW()
+            """
+        cursor.execute(select_query)
+        lockers_to_update = cursor.fetchall()
 
+        current_time = datetime.now()
+
+        # Kiểm tra và cập nhật trạng thái của các tủ
+        for locker_id, end_time in lockers_to_update:
+                if current_time > end_time:
+                    # Cập nhật trạng thái của tủ sang "off"
+                    update_locker_query = "UPDATE lockers SET status = 'off' WHERE locker_id = %s"
+                    cursor.execute(update_locker_query, (locker_id,))
+                    db.commit()
         if user:
             # Kiểm tra xem có tủ nào có status "off" không
             cursor.execute("SELECT locker_id FROM lockers WHERE status = 'off'")
@@ -256,7 +263,16 @@ def process_locker():
 
     except Exception as e:
         return f"Lỗi: {e}"
-    return render_template('process_locker.html')
+        return render_template('user.html')
+    else:
+        return redirect(url_for('login'))
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    session.pop('user_id', None)
+    return redirect(url_for('login'))
+    
 
 @app.route('/history')
 def history():
