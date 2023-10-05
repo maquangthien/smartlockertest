@@ -1,10 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-<h1>hello</h1>
-</body>
+<html>
+    <head>
+          <title>SMART LOCKER</title>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+          <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+          <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                }
+                header {
+                    text-align: center;
+                    padding: 10px;
+                }
+                container {
+                    max-width: 1200px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }
+                footer {
+                   text-align: center;
+                    clear: both;
+                    padding: 10px;
+                    position: fixed;
+                    bottom: 0;
+                    width: 100%;
+                }
+                .cn{
+                    text-align: center;
+
+                }
+            </style>
+    </head>
+    <body>
+        <header>
+            <div>
+               <nav class="navbar navbar-inverse">
+                  <div class="container-fluid">
+                    <div class="navbar-header">
+                      <a class="navbar-brand" href="#">SMART-LOCKER</a>
+                    </div>
+                    <ul class="nav navbar-nav">
+                       <li><a href="{{ url_for('otp') }}">Nhập mã OTP</a></li>
+                       <li><a href="{{ url_for('complete') }}">Kết thúc nhận hàng</a></li>
+                    </ul>
+                  </div>
+               </nav>
+            </div>
+        </header>
+    </body>
 </html>
