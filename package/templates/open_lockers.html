@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mở tủ locker</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Mở tủ locker</h1>
+        {% if session['locker_id'] and locker_status[session['locker_id']] == 'on' %}
+            <p>Tủ locker <strong>{{ session['locker_id'] }}</strong> đã được mở thành công.</p>
+        {% elif session['selected_locker_id'] %}
+            <p>Tủ locker <strong>{{ session['selected_locker_id'] }}</strong> đã được chọn để nhận hàng.</p>
+        {% else %}
+            <p>Tủ locker không có sẵn hoặc trạng thái không hợp lệ.</p>
+        {% endif %}
+        <form action="{{ url_for('delivery') }}" method="post">
+            <button type="submit">Đã lấy hàng tủ gửi. Kết thúc</button>
+        </form>
+    </div>
+</body>
+</html>
