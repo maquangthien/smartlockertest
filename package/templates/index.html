@@ -1,65 +1,97 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Hệ thống Smart Locker</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Locker System</title>
     <style>
+        /* CSS áp dụng trực tiếp lên trang */
         body {
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
         }
 
-        .header {
+        header {
+            background-color: #333;
+            color: white;
             text-align: center;
-            font-size: 24px;
-            margin-top: 20px;
+            padding: 20px;
         }
 
-        .navigation {
-            text-align: right;
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav li {
+            display: inline;
             margin-right: 20px;
         }
 
-        .navigation a {
+        nav a {
             text-decoration: none;
-            margin: 0 20px;
+            color: #333;
+            font-weight: bold;
         }
 
-        .main-content {
-            display: flex;
-            justify-content: space-between;
+        section.content {
+            background-color: white;
             margin: 20px;
-        }
-
-        .feature-box {
-            width: 48%;
-            border: 1px solid #ccc;
             padding: 20px;
-            text-align: center;
-            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
         }
 
-        .feature-box:hover {
-            background-color: #f5f5f5;
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px;
+        }
+
+        /* Style cho bảng dữ liệu Lockers và Users (tùy chỉnh theo cần) */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #333;
+            color: white;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        Hệ thống Smart Locker
-    </div>
+    <header>
+        <h1>Welcome to Smart Locker System</h1>
+    </header>
 
-    <div class="navigation">
-        <a href="/notifications">Thông báo</a>
-        <a href="/register">Đăng ký</a>
-        <a href="/login">Đăng nhập</a>
-    </div>
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/register">Đăng ký tài khoản</a></li>
+            <li><a href="/login">đăng nhập</a></li>
+        </ul>
+    </nav>
 
-    <div class="main-content">
-        <a href="/login" class="feature-box">
-            <h2>Đặt Tủ</h2>
-        </a>
-        <a href="/login" class="feature-box">
-            <h2>Lịch Sử Đặt Tủ</h2>
-        </a>
-    </div>
+    <section class="content">
+        <h2>Lockers</h2>
+        <!-- Locker information goes here -->
+    </section>
+
+    <section class="content">
+        <h2>Users</h2>
+        <!-- User information goes here -->
+    </section>
+
 </body>
 </html>
