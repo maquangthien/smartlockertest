@@ -5,6 +5,7 @@ import random
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import smtplib
+import string
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -14,7 +15,7 @@ db = mysql.connector.connect(
     host="localhost",
     user="root",
     password="PassW0rk#123Wen",
-    database="smart_locker"
+    database="smart_locker1"
 )
 cursor = db.cursor()
 
@@ -97,13 +98,12 @@ def login():
 
             cursor.close()
 
-
             if role_id == '3':
-                return render_template('admin.html', user_name=user_name)
+                return render_template('otp_delivery.html', user_name=user_name)
             elif role_id == '2':
-                return render_template('delivery.html', user_name=user_name)
+                return render_template('process_locker.html', user_name=user_name)
             elif role_id == '1':
-                return render_template('user.html', user_name=user_name)
+                return render_template('admin.html', user_name=user_name)
             else:
                 error_message = "Vai trò không hợp lệ."
                 return render_template('login.html', error_message=error_message)
@@ -130,37 +130,84 @@ def logout():
     return redirect(url_for('login'))
 
 
-def generate_history_id():
+@app.route('/process_locker', methods=['POST'])
+def process_locker():
     cursor = db.cursor()
-    cursor.execute("SELECT MAX(history_id) FROM histories")
-    result = cursor.fetchone()
-    cursor.close()
 
-    if result[0] is not None:
-        current_id = int(result[0][1:])
-        next_id = current_id + 1
-        history_id = f"H{next_id:03d}"
-    else:
-        history = "H001"
+    try:
+        if request.method == 'POST':
+            name = request.form['name']
+            mail = request.form['mail']
+            phone = request.form['phone']
+            start_time = request.form['start_time']
 
-    return history_id
+            # Kiểm tra xem số điện thoại có tồn tại trong bảng "users" hay không
+            cursor.execute("SELECT user_id FROM users WHERE phone = %s", (phone,))
+            user = cursor.fetchone()
 
-def generate_otp_id():
-    cursor = db.cursor()
-    cursor.execute("SELECT MAX(otp_id) FROM otps")
-    result = cursor.fetchone()
-    cursor.close()
+            if user:
+                # Kiểm tra xem có tủ nào có status "off" không
+                cursor.execute("SELECT locker_id FROM lockers WHERE status = 'off' LIMIT 1")
+                available_locker = cursor.fetchone()
 
-    if result[0] is not None:
-        current_id = int(result[0][1:])
-        next_id = current_id + 1
-        otp_id = f"{next_id:03d}"
-    else:
-        otp_id = "001"
+                if available_locker:
+                    locker_id = available_locker[0]
 
-    return otp_id
-def send_email(mail, locker_id, otp_code):
-    # Thiết lập thông tin SMTP
+                    # Sinh mã OTP cho từng người liên quan
+                    otp_sender = generate_otp()
+                    otp_deliver = generate_otp()
+                    otp_receiver = generate_otp()
+                    expiration_time = datetime.now() + timedelta(hours=3)
+
+                    # Tạo mã codeorders và lưu vào biến
+                    codeorders = generate_random_code()
+
+                    # Lưu các mã OTP vào bảng "otps"
+                    cursor.execute(
+                        "INSERT INTO otps (otp_sender, otp_deliver, otp_receiver, expiration_time, codeorders) VALUES (%s, %s, %s, %s, %s)",
+                        (otp_sender, otp_deliver, otp_receiver, expiration_time, codeorders))
+                    db.commit()
+                    user_sender = user[0]  # Đây là user_id của người gửi, bạn cần lấy từ user đã đăng nhập
+                    start_time = datetime.now()
+
+                    # Sử dụng cùng biến codeorders trong truy vấn SQL và khi gán giá trị vào bảng "histories"
+                    cursor.execute(
+                        "INSERT INTO histories (codeorders, user_sender, start_time) VALUES (%s, %s, %s)",
+                        (codeorders, user_sender, start_time))
+                    db.commit()
+
+                    # Lưu thông tin mã OTP và codeorders vào biến session
+                    session['otp_sender'] = otp_sender
+                    session['otp_deliver'] = otp_deliver
+                    session['otp_receiver'] = otp_receiver
+                    session['codeorders'] = codeorders  # Lưu codeorders vào session
+
+                    cursor.close()
+
+                    if send_otp_sender(mail, otp_sender):
+                        # Chuyển hướng người gửi đến trang otp_sender.html
+                        return redirect(url_for('otp_sender'))
+                else:
+                    return "Không có tủ trống để đặt."
+            else:
+                return "Số điện thoại không tồn tại trong hệ thống."
+    except Exception as e:
+        # Xử lý lỗi ở đây nếu có
+        return str(e)
+    return render_template('process_locker.html')
+
+
+def generate_random_code():
+    digits = ''.join(random.choices(string.digits, k=4))
+    letters = ''.join(random.choices(string.ascii_letters, k=4))
+    code = digits + letters
+    return code
+
+def generate_otp():
+    # Sinh mã OTP ngẫu nhiên, ví dụ mã OTP gồm 4 chữ số
+    return str(random.randint(1000, 9999))
+
+def send_otp_sender(mail, otp_sender):
     smtp_server = "smtp.gmail.com"
     smtp_port = 587
     smtp_username = "2051010118huyen@ou.edu.vn"
@@ -172,103 +219,210 @@ def send_email(mail, locker_id, otp_code):
     msg['To'] = mail
     msg['Subject'] = "Thông tin đặt tủ"
 
-    body = f"Tủ đã được cấp. Mã tủ: {locker_id},với mã OTP là: {otp_code} Vui lòng không cung cấp mã này cho bất kì ai.Mã OTP có thời gian sử dụng là 3 tiếng."
+    body = f"Mã OTP là: {otp_sender}\nVui lòng không cung cấp mã này cho bất kì ai. Mã OTP có thời gian sử dụng là 3 tiếng."
     msg.attach(MIMEText(body, 'plain'))
 
-    # Gửi email
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
+    try:
+        # Gửi email
+        server = smtplib.SMTP(smtp_server, smtp_port)
         server.starttls()
         server.login(smtp_username, smtp_password)
-        server.sendmail(msg['From'], msg['To'], msg.as_string())
-
-# Set lại status của locker_id
-def reset_status():
-    try:
-        # Lấy danh sách các tủ có trạng thái "on" và end_time đã qua
-        select_query = "SELECT locker_id, end_time FROM histories"
-        cursor.execute(select_query)
-        lockers_to_update = cursor.fetchall()
-
-        current_time = datetime.now()
-
-        # Kiểm tra và cập nhật trạng thái của các tủ
-        for locker_id, end_time in lockers_to_update:
-            if current_time > end_time:
-                # Cập nhật trạng thái của tủ sang "off"
-                update_locker_query = "UPDATE lockers SET status = 'off' WHERE locker_id = %s"
-                cursor.execute(update_locker_query, (locker_id,))
-                db.commit()
+        server.sendmail(smtp_username, mail, msg.as_string())
+        server.quit()
+        return True
     except Exception as e:
-        print(f"Lỗi: {e}")
-@app.route('/process_locker', methods=['GET','POST'])
-def process_locker():
+        print(f"Lỗi khi gửi email: {str(e)}")
+        return False
+@app.route('/otp_sender')
+def otp_sender():
+    # Kiểm tra xem có mã OTP trong biến session không
+    if 'otp_sender' in session:
+        otp_sender = session['otp_sender']
+        return render_template('otp_sender.html', otp_sender=otp_sender)
+    else:
+        return redirect(url_for('process_locker'))
+
+@app.route('/unlock_locker', methods=['POST'])
+def unlock_locker():
+    if request.method == 'POST':
+        otp_sender = request.form['otp_sender']
+        codeorders = session.get('codeorders')  # Lấy giá trị codeorders từ session
+
+        # Kiểm tra xác thực OTP
+        if otp_sender == session.get('otp_sender'):
+            cursor = db.cursor()
+
+            # Tìm tủ trống (status='off')
+            cursor.execute("SELECT locker_id FROM lockers WHERE status = 'off' LIMIT 1")
+            available_locker = cursor.fetchone()
+
+            if available_locker:
+                locker_id = available_locker[0]
+
+                # Cập nhật trạng thái tủ thành "on" (status='on')
+                cursor.execute("UPDATE lockers SET status = 'on' WHERE locker_id = %s", (locker_id,))
+                db.commit()
+
+                # Tạo mã ngẫu nhiên
+                otp_processing = generate_otp()
+                code_orders = generate_random_code()
+
+                # Truy vấn thông tin từ bảng histories dựa trên codeorders
+                cursor.execute("SELECT user_sender, start_time FROM histories WHERE codeorders = %s", (codeorders,))
+                history_info = cursor.fetchone()
+
+                if history_info:
+                    user_sender = history_info[0]
+                    start_time = history_info[1]
+
+                    # Tiến hành cập nhật thông tin vào bảng otpprocessing
+                    cursor.execute(
+                        "INSERT INTO otpprocessing (user_id, locker_id, otp, codeorders) VALUES (%s, %s, %s, %s)",
+                        (user_sender, locker_id, otp_sender, codeorders)
+                    )
+                    db.commit()
+                else:
+                    # Xử lý trường hợp không tìm thấy thông tin trong bảng histories
+                    return "Không tìm thấy thông tin từ bảng histories."
+
+                db.commit()
+
+                cursor.close()
+
+                # Xóa mã OTP sau khi sử dụng
+                session.pop('otp_sender', None)
+
+                # Chuyển hướng đến trang thông báo và hiển thị tủ đã mở
+                return render_template('unlock_success.html', locker_number=locker_id)
+
+    # Nếu xác thực không thành công hoặc không có OTP, chuyển hướng về trang process_locker.html
+    return redirect(url_for('process_locker'))
+
+
+def send_otp_deliver(mail, otp_deliver):
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+    smtp_username = "2051010118huyen@ou.edu.vn"
+    smtp_password = "nguyenthithuhuyen"
+
+    # Tạo email
+    msg = MIMEMultipart()
+    msg['From'] = "2051010118huyen@ou.edu.vn"
+    msg['To'] = mail
+    msg['Subject'] = "Mã OTP_deliver"
+
+    body = f"Mã OTP là: {otp_deliver}\nVui lòng không cung cấp mã này cho bất kì ai. Mã OTP có thời gian sử dụng là 3 tiếng."
+    msg.attach(MIMEText(body, 'plain'))
+
     try:
-     if request.method == 'POST':
-        name = request.form['name']
-        mail = request.form['mail']
-        phone = request.form['phone']
-        start_time = request.form['start_time']
+        # Gửi email
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+        server.sendmail(smtp_username, mail, msg.as_string())  # Sửa từ "mail" thành "email" ở đây
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Lỗi khi gửi email: {str(e)}")
+        return False
 
 
-        # Kiểm tra xem số điện thoại có tồn tại trong bảng "users" hay không
-        cursor.execute("SELECT user_id FROM users WHERE phone = %s", (phone,))
-        user = cursor.fetchone()
+@app.route('/close_locker', methods=['POST'])
+def close_locker():
+    cursor = db.cursor()
 
-        if user:
-            # Kiểm tra xem có tủ nào có status "off" không
-            cursor.execute("SELECT locker_id FROM lockers WHERE status = 'off'")
-            available_lockers = cursor.fetchall()
+    # Kiểm tra xem có tủ nào trống (status='off') không
+    cursor.execute("SELECT locker_id FROM lockers WHERE status = 'off' LIMIT 1")
+    available_locker = cursor.fetchone()
 
-            if available_lockers:
-                # Random một tủ
-                selected_locker = random.choice(available_lockers)[0]
+    if available_locker:
+        # Nếu có tủ trống, thực hiện các thao tác cần thiết (ví dụ: cập nhật trạng thái, lưu lịch sử)
+        locker_id = available_locker[0]
 
-                # Cập nhật status của tủ đã chọn
-                cursor.execute("UPDATE lockers SET status = 'on' WHERE locker_id = %s", (selected_locker,))
+        # Lấy mã OTP_deliver từ bảng otps, sử dụng codeorders từ biến session
+        codeorders = session.get('codeorders')
+        cursor.execute("SELECT otp_deliver FROM otps WHERE codeorders = %s", (codeorders,))
+        otp_deliver = cursor.fetchone()
 
-                # Tạo mã OTP
-                otp_code = random.randint(1000, 9999)
+        if otp_deliver:
+            # Truy vấn user_id của người giao hàng (shipper) dựa trên role_id
+            cursor.execute("SELECT user_id FROM users WHERE role_id = 3")
+            shipper_user_id = cursor.fetchone()
 
-                # Tạo otp_id mới
-                otp_id = generate_otp_id()
-                cursor.execute("INSERT INTO otps (otp_id,otp_code, user_id, locker_id) VALUES (%s, %s, %s,%s)",
-                               (otp_id, otp_code, user[0], selected_locker))
-                db.commit()
+            if shipper_user_id:
+                # Lấy địa chỉ email của người giao hàng dựa trên user_id
+                cursor.execute("SELECT mail FROM users WHERE user_id = %s", (shipper_user_id[0],))
+                shipper_email = cursor.fetchone()
 
-                history_id = generate_history_id()
-                # Tiến hành lưu thông tin vào bảng histories
-                insert_query = "INSERT INTO histories (history_id,user_id, locker_id, start_time, end_time) VALUES (%s,%s, %s,%s,%s)"
-                end_time = datetime.now() + timedelta(hours=3)  # Tính thời gian kết thúc sau 3 tiếng
-                values = (history_id, user[0], selected_locker, start_time, end_time)
-                cursor.execute(insert_query, values)
-                db.commit()
+                if shipper_email:
+                    otp_deliver = otp_deliver[0]  # Lấy giá trị của mã OTP_deliver
 
-                # Gửi email
-                send_email(mail, selected_locker, otp_code)
+                    # Gửi mã OTP_deliver cho người giao hàng (sử dụng địa chỉ email của người giao hàng)
+                    if send_otp_deliver(shipper_email[0], otp_deliver):
+                        # Cập nhật user_deliver trong bảng histories
+                        cursor.execute(
+                            "UPDATE histories SET user_deliver = %s WHERE codeorders = %s",
+                            (shipper_user_id[0], codeorders)
+                        )
 
-                return jsonify("Đặt tủ thành công")
+                        # Kiểm tra xem có bất kỳ bản ghi nào có cùng giá trị codeorders
+                        cursor.execute("SELECT otpprocessing_id FROM otpprocessing WHERE codeorders = %s",
+                                       (codeorders,))
+                        otpprocessing_record = cursor.fetchone()
 
+                        if otpprocessing_record:
+                            otpprocessing_id = otpprocessing_record[0]
+
+                            # Cập nhật user_id và otp trong bảng otpprocessing
+                            cursor.execute(
+                                "UPDATE otpprocessing SET user_id = %s, otp = %s WHERE otpprocessing_id = %s",
+                                (shipper_user_id[0], otp_deliver, otpprocessing_id)
+                            )
+
+                        db.commit()
+
+                        cursor.close()
+
+                        return f"Tủ số {locker_id} đã được đóng và kết thúc. Mã OTP_deliver đã được gửi đến người giao hàng."
+                    else:
+                        return "Gửi mã OTP_deliver không thành công."
+                else:
+                    return "Không tìm thấy địa chỉ email của người giao hàng trong cơ sở dữ liệu."
             else:
-                return jsonify("Không có tủ trống.")
-
+                return "Không tìm thấy người giao hàng (shipper) có role_id = 3 trong cơ sở dữ liệu."
         else:
-            return jsonify("Số điện thoại không tồn tại trong hệ thống.")
+            return "Không tìm thấy mã OTP_deliver trong bảng otps."
+    else:
+        return "Không có tủ trống nào để đóng và kết thúc."
 
-    except Exception as e:
-        return f"Lỗi: {e}"
-    return render_template('process_locker.html')
+@app.route('/otp_delivery', methods=['GET'])
+def otp_delivery():
+    return render_template('otp_delivery.html')
 
-@app.route('/history')
-def history():
-    # Truy vấn lịch sử dùng tủ
-            select_history_query = "SELECT history_id, user_id, locker_id, start_time, end_time FROM histories"
-            cursor.execute(select_history_query)
-            history_data = cursor.fetchall()
+@app.route('/validate_otp', methods=['POST'])
+def validate_otp():
+    if request.method == 'POST':
+        entered_otp = request.form['otp']
 
-            # Đóng kết nối cơ sở dữ liệu
-            # cursor.close()
-            # db.close()
-            return render_template('history.html', history_data=history_data)
+        # Lấy mã OTP_deliver từ biến session
+        otp_deliver = session.get('otp_deliver')
+
+        if entered_otp == otp_deliver:
+            # Mã OTP đúng, mở tủ để lấy hàng (thực hiện các thao tác cần thiết)
+
+            # Xóa mã OTP_deliver sau khi đã sử dụng
+            session.pop('otp_deliver', None)
+
+            # Điều hướng đến trang thông báo tủ đã được mở
+            return redirect(url_for('locker_opened'))
+        else:
+            # Mã OTP không đúng, hiển thị thông báo lỗi
+            error_message = "Mã OTP không đúng. Vui lòng thử lại."
+            return render_template('otp_delivery.html', error_message=error_message)
+
+@app.route('/locker_opened', methods=['GET'])
+def locker_opened():
+    return render_template('locker_opened.html')
 
 
 if __name__ == '__main__':
